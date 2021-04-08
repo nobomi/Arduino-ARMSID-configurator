@@ -1,4 +1,4 @@
-# Arduino-ARMSID-configurator
+# Arduino ARMSID configurator
 
 Simple Arduino shield with a sketch for ARMSID and ARM2SID configuration using Tera Term or similar ANSI terminal program. It allows:
 - configure ARMSID or ARM2SID parameters (SID type, address mappings, filters, digifix, ...)
