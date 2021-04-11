@@ -83,4 +83,7 @@ Arduino        | B1                | Arduino UNO Rev3                           
   * 3.5 mm audio JACK touches the Arduino USB connector. Solder without tin bump and isolate with Kapton tape!
   * No power supply for real SIDs. The 5V provided is not sufficient for MOS 6581 nor 8580.  
 
+
+[![Open Source? Yes!](https://badgen.net/badge/Open%20Source%20%3F/Yes%21/blue?icon=github)](https://github.com/Naereen/badges/)
 [![MIT license](https://img.shields.io/badge/License-MIT-blue.svg)](https://lbesson.mit-license.org/)
+[![GitHub commits](https://img.shields.io/github/commits-since/Naereen/StrapDown.js/v1.0.0.svg)](https://GitHub.com/Naereen/StrapDown.js/commit/)
