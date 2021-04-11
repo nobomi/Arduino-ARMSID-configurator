@@ -6,7 +6,7 @@ Simple Arduino shield with a sketch for ARMSID and ARM2SID configuration using T
 - udpate ARMSID or ARM2SID firmware
 - play some SIDs to a headphone header (more than 60 ohms headphones only)
 
-![Arduino ARMSID configurator](images/Arduino-ARMSID-shield_3M-ZIF-ARM2SID_front.jpg|width=100px)
+<img src="images/Arduino-ARMSID-shield_3M-ZIF-ARM2SID_front.jpg" width=100px alt="Arduino ARMSID configurator">
 
 ### Schematic and PCB Layout
 
