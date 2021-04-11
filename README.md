@@ -37,8 +37,8 @@ Stereo audio output for headphones or amplifier line input.
 
 Pin | Description     
 --- | ---------------
-Tip (the inner contact) | Output: Audio left (>60 ohms or line level)
-Second row (the middle contact) | Output: Audio right (>60 ohms or line level)
+Tip (the inner outer contact) | Output: Audio left (>60 ohms or line level)
+Second row (the inner middle contact) | Output: Audio right (>60 ohms or line level)
 Ring / Sleeve         |	Ground (GND)
 
 Note: When connecting headphones, the impedance should be at least 60 ohm.
