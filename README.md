@@ -6,13 +6,7 @@ Simple Arduino shield with a sketch for ARMSID and ARM2SID configuration using T
 - udpate ARMSID or ARM2SID firmware
 - play some SIDs to a headphone header (more than 60 ohms headphones only)
 
-<img src="images/Arduino-ARMSID-shield_3M-ZIF-ARM2SID_front.jpg" alt="Arduino ARMSID configurator shield with 3M ZIF sockets" width="200">
-&nbsp;&nbsp;
-<img src="images/Arduino-ARMSID-shield_ARIES-ZIF-ARM2SID_front.jpg" alt="Arduino ARMSID configurator shield with ARIES ZIF sockets" width="200">
-&nbsp;&nbsp;
-<img src="images/Arduino-ARMSID-shield_machined-socket-ARM2SID_front.jpg" alt="Arduino ARMSID configurator shield with machined sockets" width="200">
-&nbsp;&nbsp;
-<img src="images/Arduino_ARMSID_shield-back.jpg" alt="Arduino ARMSID configurator shield from back side" width="200">
+<img src="images/Arduino-ARMSID-shield_3M-ZIF-ARM2SID_front.jpg" alt="Arduino ARMSID configurator shield with 3M ZIF sockets" width="200">&nbsp;&nbsp;<img src="images/Arduino-ARMSID-shield_ARIES-ZIF-ARM2SID_front.jpg" alt="Arduino ARMSID configurator shield with ARIES ZIF sockets" width="200">&nbsp;&nbsp;<img src="images/Arduino-ARMSID-shield_machined-socket-ARM2SID_front.jpg" alt="Arduino ARMSID configurator shield with machined sockets" width="200">&nbsp;&nbsp;<img src="images/Arduino_ARMSID_shield-back.jpg" alt="Arduino ARMSID configurator shield from back side" width="200">
 
 ### Schematic and PCB Layout
 
