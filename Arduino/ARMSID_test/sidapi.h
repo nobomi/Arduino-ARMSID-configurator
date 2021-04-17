@@ -29,18 +29,18 @@ void Set_PHI2_1MHz() {
   TCCR1A = 0b01000000;
   TCCR1B = 0b00001001;
   OCR1AH = 0;
-  OCR1AL = 7; //15; // 7 for 1 MHz
+  OCR1AL = 7; // 1 MHz
   TIMSK1 = 0;
 }
 
 void setup() {
   // put your setup code here, to run once:
-  DDRD = B00000011; // digital pins 2-7 input (data)
-  DDRB = B11110011; // didigtal pins 10-11 input (data)
   PORTD = B00000000;
-  PORTB = B00110001; // bit 5 RST HIGH, bit 4 CS2 HIGH, bit 0 R/W HIGH
-  DDRC = B00111111; // analog pins 0-4 output (register address), bit 5 CS
+  PORTB = B00110000; // bit 5 RST HIGH, bit 4 CS2 HIGH, bit 0 R/W LOW
   PORTC = B00100000; // no pullups, but pin 5 CS1 HIGH
+  DDRD = B11111111; // digital pins 2-7 output (data)
+  DDRB = B11111111; // didigtal pins 10-11 output (data)
+  DDRC = B00111111; // analog pins 0-4 output (register address), bit 5 CS
   Set_PHI2_1MHz();
   Serial.begin(115200);
 }
@@ -49,7 +49,7 @@ void reset_SID() {
   digitalWrite(RST, LOW);
   delay(10);
   digitalWrite(RST, HIGH);
-  delay(300);
+  delay(750);
 }
 
 // -------------------------- ARMSID addressing --------------------------------
@@ -70,40 +70,58 @@ SIDaddrtype SIDgetaddr(int i)
 byte SIDrd(byte addr) {
   byte pd, pb;
   // TCCR1B = 0b00001000;
+  DDRD = DDRD & B00000011; // digital pins 2-7 input (data)
+  DDRB = DDRB & B11110011; // didigtal pins 10-11 input (data)
+  PORTD = PORTD & B00000000; // no pullups on data digital pins 2-7
+  PORTB = PORTB & B11110011; // no pullups on data digital pins 10-11
+  PORTB = PORTB | B00000001; // RW HIGH
   PORTC = addr | B00100000; // set address, keep CS HIGH
-  if (SIDaddr&0x3FF) PORTB &= ~(B00010000); // CS2 LOW
-  else PORTC = addr & B00011111; // write address and CS LOW
-  delayMicroseconds(2);
+  if (SIDaddr&0x3FF) {
+    register byte cs = PORTB & ~(B00010000); // CS2 LOW
+    while (PINB&2);
+    while ((PINB&2)==0);
+    PORTB = cs;
+  }
+  else {
+    register byte cs = addr & B00011111; // write address and CS LOW
+    while (PINB&2);
+    while ((PINB&2)==0);
+    PORTC = cs;
+  }
+  while (PINB&2);
+  while ((PINB&2)==0);
   pd = PIND;
   pb = PINB;
   if (SIDaddr&0x3FF) PORTB |= B00010000; // CS2 HIGH
   else PORTC = PORTC | B00100000; // CS HIGH
   byte out = (pd & B11111100) | ((pb >> 2) & B00000011);
-  delayMicroseconds(2);
-  // TCCR1B = 0b00001001;
+  PORTB = PORTB & B11111110; // RW LOW
+  DDRD = DDRD | B11111100; // digital pins 2-7 output (data)
+  DDRB = DDRB | B00001100; // didigtal pins 10-11 output (data)
   return out;
 }
 
 void SIDwr(byte addr, byte dta) {
   // TCCR1B = 0b00001000;
-  DDRD = DDRD | B11111100; // digital pins 2-7 output (data)
-  DDRB = DDRB | B00001100; // didigtal pins 10-11 output (data)
   PORTD = dta & B11111100;
   PORTB = (PORTB & B11110011) | ((dta & B00000011) << 2);
   PORTC = addr | B00100000; // set address, keep CS HIGH
-  PORTB = PORTB & B11111110; // RW LOW
-  if (SIDaddr&0x3FF) PORTB &= ~(B00010000); // CS2 LOW
-  else PORTC = addr & B00011111; // write address and CS LOW
-  delayMicroseconds(3);
+  if (SIDaddr&0x3FF) {
+    register byte cs = PORTB & ~(B00010000); // CS2 LOW
+    while (PINB&2);
+    while ((PINB&2)==0);
+    PORTB = cs;
+  }
+  else {
+    register byte cs = addr & B00011111; // write address and CS LOW
+    while (PINB&2);
+    while ((PINB&2)==0);
+    PORTC = cs;
+  }
+  while (PINB&2);
+  while ((PINB&2)==0);
   if (SIDaddr&0x3FF) PORTB |= B00010000; // CS2 HIGH
   else PORTC = PORTC | B00100000; // CS HIGH
-  PORTB = PORTB | B00000001; // RW HIGH
-  DDRD = DDRD & B00000011; // digital pins 2-7 input (data)
-  DDRB = DDRB & B11110011; // didigtal pins 10-11 input (data)
-  PORTD = PORTD & B00000000; // no pullups on data digital pins 2-7
-  PORTB = PORTB & B11110011; // no pullups on data digital pins 10-11
-  delayMicroseconds(2);
-  // TCCR1B = 0b00001001;
   return;
 }
 
@@ -240,20 +258,20 @@ int wherey() { return KY; }
 
 static void textbackground(short i) {
   KURZMOVEON=0;
-  cputs2my("\x1B[");
-  cputc('0'+(i>>8));
-  cputs2my(";4");
+  cputs2my("\x1B[4");
   cputc('0'+(i&255));
+  cputs2my(";");
+  cputc('0'+(i>>8));
   cputc_('m');
   KURZMOVEON=1;
 }
 
 static void textforeground(short i) {
   KURZMOVEON=0;
-  cputs2my("\x1B[");
-  cputc('0'+(i>>8));
-  cputs2my(";3");
+  cputs2my("\x1B[3");
   cputc('0'+(i&255));
+  cputs2my(";");
+  cputc('0'+(i>>8));
   cputc_('m');
   KURZMOVEON=1;
 }
@@ -426,6 +444,8 @@ void setup2() {
     SIDwr(0, 0);
   sid_off();
   delay(1000);
+    cputs2my("\x1B[0");
+    cputc_('m');
     bgcolor(COLOR_BLUE);
     textcolor(COLOR_WHITE);
     _setcursortype(_NOCURSOR);
