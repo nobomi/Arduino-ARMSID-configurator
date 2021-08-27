@@ -16,6 +16,7 @@
   #include <unistd.h>
   #include <stdlib.h>
   #include <termios.h>
+  #include <sys/time.h>
   typedef int HANDLE;
   typedef long int DWORD;
   #define CloseHandle(h) close(h)
@@ -66,7 +67,20 @@ void serout(unsigned char *data, int len) {
         exit(1);
     }
 #ifndef _WIN32
+    // nobomi said wait at least 100 us for every sent byte:
+    // [1]: https://github.com/nobomi/Arduino-ARMSID-configurator/pull/2#issuecomment-907066481
+    // I think that includes the tcdrain() time, so measure and subtract that.
+    // Even so, nanosleep(100000) slows the timing too much. 10,000ns (10us) seems to work nicely.
+    struct timespec drainStart, drainFinish;
+    clock_gettime(CLOCK_MONOTONIC, &drainStart);
     tcdrain(hSerial); // wait for written data to finish transmitting
+    clock_gettime(CLOCK_MONOTONIC, &drainFinish);
+    // ignore the seconds should be fine as long as draining takes less than a second.
+    uint64_t drainNano = (uint64_t)drainFinish.tv_nsec - (uint64_t)drainStart.tv_nsec;
+    if (drainNano < len*100000) {
+      // sleep for 100us (100000ns) per byte, minus the time tcdrain() took.
+      nanosleep((const struct timespec[]){{0, (len*10000 - drainNano)}}, NULL);
+    }
 #endif
 }
 
