@@ -1,20 +1,20 @@
 /*
 ** ArmSID & Arm2SID tester/configurator using cc65 or Borland Turbo C++ V1.0. or Arduino and others
-** 
+**
 ** Copyright (c) 2021 nobomi (Bohumil Novacek, dzin@post.cz)
-** 
+**
 ** MIT License
-** 
+**
 ** Permission is hereby granted, free of charge, to any person obtaining a copy
 ** of this software and associated documentation files (the "Software"), to deal
 ** in the Software without restriction, including without limitation the rights
 ** to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 ** copies of the Software, and to permit persons to whom the Software is
 ** furnished to do so, subject to the following conditions:
-** 
+**
 ** The above copyright notice and this permission notice shall be included in all
 ** copies or substantial portions of the Software.
-** 
+**
 ** THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 ** IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 ** FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -31,9 +31,9 @@
 /*****************************************************************************/
 
 #ifdef ARM2SID
-#define Nadpis "\\\\       nobomi armsid tester v3.12\\\\\\"
+#define Nadpis "\\\\       nobomi armsid tester v3.13\\\\\\"
 #else
-#define Nadpis "\\\\       nobomi armsid tester v2.12\\\\\\"
+#define Nadpis "\\\\       nobomi armsid tester v2.13\\\\\\"
 #endif
 #define Notfou "armsid not found"
 #ifdef ARM2SID
@@ -44,7 +44,7 @@
 #define Founda "armsid"
 #endif
 
-#define WarnBL 	 "!! warning ! bootloader fw  ! warning !!"
+#define WarnBL      "!! warning ! bootloader fw  ! warning !!"
 #define WarnBeta "!! warning ! beta firmware  ! warning !!"
 
 /*****************************************************************************/
@@ -53,6 +53,7 @@
 
 static unsigned char SIDi;
 static unsigned char version;
+static unsigned char revision;
 static unsigned char release;
 
 struct s_vyber_list {
@@ -118,8 +119,8 @@ static unsigned char socket;
 #define EXTIN_NO      0
 #define EXTIN_YES     CHAR_E
 
-#define DIGIFIX_NO		0
-#define DIGIFIX_YES		0x58
+#define DIGIFIX_NO        0
+#define DIGIFIX_YES        0x58
 
 char get_p(void) {
   return SIDrd(27);
@@ -259,32 +260,32 @@ void namaluj(unsigned char x0, unsigned char y0, const struct s_canvas *c) {
 }
 
 void candidate() {
-	if (release) {
-		char x=wherex();
-		char y=wherey();
+    if (release) {
+        char x=wherex();
+        char y=wherey();
     (void) bordercolor(COLOR_YELLOW);
     (void) textcolor(COLOR_YELLOW);
-		revers(1);
-		if (release==255) {
-			cputs2xy(0,0,WarnBL);
+        revers(1);
+        if (release==255) {
+            cputs2xy(0,0,WarnBL);
 #ifdef TERMINAL_HEIGHT
       cputs2xy(0,TERMINAL_HEIGHT-1,WarnBL);
 #else
       cputs2xy(0,24,WarnBL);
 #endif
-		} else {
+        } else {
       cputs2xy(0,0,WarnBeta);
 #ifdef TERMINAL_HEIGHT
       cputs2xy(0,TERMINAL_HEIGHT-1,WarnBeta);
 #else
       cputs2xy(0,24,WarnBeta);
 #endif
-		}
-		revers(0);
-		//back
+        }
+        revers(0);
+        //back
     (void) textcolor(COLOR_WHITE);
-		gotoxy(x,y);
-	}
+        gotoxy(x,y);
+    }
 }
 
 void new_page(void) {
@@ -364,15 +365,15 @@ void uvod_extend(void) {
     cputs2xy(0+1, 4+3,"follin galway  average  strong exterme");
 
     cputs2xy(0+4, 8+1,   "mos 6581 lowest filter frequency");
-    
+
     cputs2xy(0+1, 8+3," 150             215              310");
 
     cputs2xy(0+4,12+1,   "mos 8580 filter central frequency");
-    
+
     cputs2xy(0+1,12+3," 12000           6000            3000");
 
     cputs2xy(0+4,16+1,   "mos 8580 lowest filter frequency");
-    
+
     cputs2xy(0+1,16+3," 30              100              330");
 
     save_back_quit();
@@ -843,6 +844,7 @@ signed char najdi(void) {
 #else
   int i,j;
   unsigned char p,q;
+  unsigned char first=1;
   SIDi=0;
   // mute all
   for (i=0;i<SIDaddresses;i++) {
@@ -875,7 +877,7 @@ signed char najdi(void) {
     // now looking for a duplicate
     for (j=i+1;j<SIDaddresses;j++) {
       SIDaddr=SIDgetaddr(j);
-      p=get_p();
+      p=get_pcmd(CHAR_D,CHAR_I);
       q=get_q();
       if ((p!=CHAR_N)||(q!=CHAR_O)) continue;
       p=get_pcmd(CHAR_E,CHAR_I);
@@ -883,21 +885,25 @@ signed char najdi(void) {
       if ((p!=CHAR_S)||(q!=CHAR_W)) continue;
       res^=(1<<j); // duplicated
     }
+    SIDaddr=SIDgetaddr(i);
     sid_off();
-    SIDi=i; // remember last working
+    if (first==1) {
+      SIDi=i; // remember first working
+      first=0;
+    }
   }
 #endif
-    if (res&(res-1)) res=vyber_sid(res);
-    else { // just one
-      SIDaddr=SIDgetaddr(SIDi);
-    }
-    if (res>0) {
+  if (res&(res-1)) res=vyber_sid(res);
+  else { // just one
+    SIDaddr=SIDgetaddr(SIDi);
+  }
+  if (res>0) {
     printf_sidi();
-    } else {
+  } else {
     cputs2(Notfou);
     cputs2("\\");
-    }
-    return res;
+  }
+  return res;
 }
 
 #ifdef UID
@@ -909,129 +915,133 @@ void cputascii(unsigned char c) {
 
 //details printing
 void details(void) {
-    unsigned char p,q;
+  unsigned char p,q;
   p=get_pcmd(CHAR_V,CHAR_I);
-    q=get_q();
+  q=get_q();
 #ifdef DEMO
-    p=2;
-    q=12;
+  p=2;
+  q=13;
 #endif
-    version=p;
-    cputs2("fw version:");
-    cputbval(p);
-    cputc('.');
-    cputbval(q);
+  version=p;
+  revision=q;
+  cputs2("fw version:");
+  cputbval(p);
+  cputc('.');
+  cputbval(q);
   p=get_pcmd(CHAR_R,CHAR_I);
 #ifdef DEMO
-    p='8';
+  p='8';
 #endif
-		if ((p>'0')&&(p<CHAR_E)) {
-			release=p-'0';
-			cputs2(" beta ");
-			cputbval(release);
-		}
-		cputs2("\\");
+  if ((p>'0')&&(p<CHAR_E)) {
+    release=p-'0';
+    cputs2(" beta ");
+    cputbval(release);
+  }
+  cputs2("\\");
 
-	p=get_pcmd(CHAR_F,CHAR_I);
+  p=get_pcmd(CHAR_F,CHAR_I);
 
-    if ((p<=32)||(p>127)) p='.';
-    q=get_q();if ((q<=32)||(q>127)) q='.';
+  if ((p<=32)||(p>127)) p='.';
+  q=get_q();if ((q<=32)||(q>127)) q='.';
 #ifdef DEMO
-    p='8';
-    q='5';
+  p='8';
+  q='5';
 #endif
-    if (version>=2) {
-  cputs2("emulated device:");
+  if (version>=2) {
+    cputs2("emulated device:");
     cputc(p);
     cputc(q);
-  cputs2("xx");
-  p=get_pcmd(CHAR_G,CHAR_I);
-  if (p=='7') cputs2("(auto detected)\\");
-  else cputs2("               \\");
+    cputs2("xx");
+    p=get_pcmd(CHAR_G,CHAR_I);
+    if (p=='7') cputs2("(auto detected)\\");
+    else cputs2("               \\");
     } else {
-  cputs2("emulated device:");
+    cputs2("emulated device:");
     cputc(p);
     cputc(q);
-  cputs2("xx\\");
-    }
+    cputs2("xx\\");
+  }
   p=get_pcmd(CHAR_I,CHAR_F);
-    if ((p<=32)||(p>127)) p='.';
-    q=get_q();if ((q<=32)||(q>127)) q='.';
+  if ((p<=32)||(p>127)) p='.';
+  q=get_q();if ((q<=32)||(q>127)) q='.';
 #ifdef DEMO
-    p='a';
-    q='p';
+  p='a';
+  q='p';
 #endif
-    cputs2("app/boot:");
-    cputc(p);
-    cputc(q);
-		if ((p==CHAR_B)&&(q==CHAR_L)) release=255;
-	cputs2("\\");
+  cputs2("app/boot:");
+  cputc(p);
+  cputc(q);
+  if ((p==CHAR_B)&&(q==CHAR_L)) release=255;
+  cputs2("\\");
 #ifdef DEMO
-	{
-		unsigned char ii;
+  {
+    unsigned char ii;
     cputs2("s/n:");
-		cputascii('q');
-		for (ii=0xC4;ii<=0xC6;ii++) {
-			cputascii('1');
-			cputascii('2');
-		}
-		cputc('/');
-		cputbval(23);
-		cputc('/');
-		q=1;p=34;
-		if (q>0) cputascii(q+0x40);
-		cputbval(p);
-		cputc('/');
-		q=1;p=45;
-		if (q>0) cputascii(q+0x40);
-		cputbval(p);
-	}
+    cputascii('q');
+    for (ii=0xC4;ii<=0xC6;ii++) {
+      cputascii('1');
+      cputascii('2');
+    }
+    cputc('/');
+    cputbval(23);
+    cputc('/');
+    q=1;p=34;
+    if (q>0) cputascii(q+0x40);
+    cputbval(p);
+    cputc('/');
+    q=1;p=45;
+    if (q>0) cputascii(q+0x40);
+    cputbval(p);
+  }
 #else
 #ifdef UID
-	p=get_pcmd(0xC0,CHAR_I);q=get_q();
-	if ((p==0x55) && (q==0x49))	{	// UI
-		unsigned char ii;
+  p=get_pcmd(0xC0,CHAR_I);q=get_q();
+  if ((p==0x55) && (q==0x49)) { // UI
+    unsigned char ii;
     cputs2("s/n:");
-		p=get_pcmd(0xC3,CHAR_I);
-		q=get_q();
-		cputascii(q);
-		for (ii=0xC4;ii<=0xC6;ii++) {
-			p=get_pcmd(ii,CHAR_I);
-			q=get_q();
-			cputascii(p);
-			cputascii(q);
-		}
-		cputc('/');
-		p=get_pcmd(0xC3,CHAR_I);
-		cputbval(p);
-		cputc('/');
-		p=get_pcmd(0xC1,CHAR_I);
-		q=get_q();
-		if (q>0) cputascii(q+0x40);
-		cputbval(p);
-		cputc('/');
-		p=get_pcmd(0xC2,CHAR_I);
-		q=get_q();
-		if (q>0) cputascii(q+0x40);
-		cputbval(p);
-	}
+    p=get_pcmd(0xC3,CHAR_I);
+    q=get_q();
+    cputascii(q);
+    for (ii=0xC4;ii<=0xC6;ii++) {
+      p=get_pcmd(ii,CHAR_I);
+      q=get_q();
+      cputascii(p);
+      cputascii(q);
+    }
+    cputc('/');
+    p=get_pcmd(0xC3,CHAR_I);
+    cputbval(p);
+    cputc('/');
+    p=get_pcmd(0xC1,CHAR_I);
+    q=get_q();
+    if (q>0) cputascii(q+0x40);
+    cputbval(p);
+    cputc('/');
+    p=get_pcmd(0xC2,CHAR_I);
+    q=get_q();
+    if (q>0) cputascii(q+0x40);
+    cputbval(p);
+  }
 #endif
 #endif
 #ifdef DIGIFIX
 #ifdef DEMO
   isext=1;
 #else
-    isext=0;
+  isext=0;
   p=get_pcmd(0x64,CHAR_I);
-    q=get_q();
-    if ((p==0x64)&&((q==DIGIFIX_NO)||(q==DIGIFIX_YES))) isext=1;
+  q=get_q();
+  if ((p==0x64)&&((q==DIGIFIX_NO)||(q==DIGIFIX_YES))) isext=1;
 #endif
 #endif
-    cputs2("\\\\\\\\\\\\press ");
+  cputs2("\\\\\\\\\\\\press ");
   cputs2("@6/@7/@8 to 6581/auto/8580 emulation\\press ");
-    if (version>=2) {
+  if (version>=2) {
     cputs2("@p to permanently save\\press @e to extended (filter) menu ...\\press ");
+    if (revision>=13) {
+      cputs2("@x to extra features menu ...\\press ");
     }
+  }
 #ifdef DIGIFIX
   if (isext) {
     cputs2("@d to mos8580 digifix settings ...\\press ");
@@ -1043,12 +1053,12 @@ void details(void) {
   }
 #endif
   cputs2("@r to restart the tester\\and @q to quit\\");
-    if (version>=2) {
-    } else {
-      cputs2("  upgrade firmware to version 2.0 and\\      newer for new features !!!\\");
-    }
-    gotoy(11);
-		if (release) candidate();
+  if (version>=2) {
+  } else {
+    cputs2("  upgrade firmware to version 2.0 and\\      newer for new features !!!\\");
+  }
+  gotoy(11);
+  if (release) candidate();
 }
 
 void fillx(unsigned char x)
@@ -1058,83 +1068,83 @@ void fillx(unsigned char x)
 }
 
 #ifdef DEMO
-    static char napeti_zmena=0;
+static char napeti_zmena=0;
 #define napeti  9123
 #endif
 
 //analog values test
 void analog(void) {
-    unsigned char x,y,mem;
-    short v;
-    mem=wherey();
-    x=SIDrd(25);
-    y=SIDrd(26);
-    cputs2("potx=");
-    cputbval(x);fillx(15);
-    cputs2("\\poty=");
-    cputbval(y);fillx(15);
-    ((char*)&v)[1]=get_pcmd(CHAR_U,CHAR_I);
-    ((char*)&v)[0]=get_q();
+  unsigned char x,y,mem;
+  short v;
+  mem=wherey();
+  x=SIDrd(25);
+  y=SIDrd(26);
+  cputs2("potx=");
+  cputbval(x);fillx(15);
+  cputs2("\\poty=");
+  cputbval(y);fillx(15);
+  ((char*)&v)[1]=get_pcmd(CHAR_U,CHAR_I);
+  ((char*)&v)[0]=get_q();
 #ifdef DEMO
-    x=101;
-    y=255;
-    ((char*)&v)[1]=napeti/256;
-    ((char*)&v)[0]=napeti%256;
-    napeti_zmena^=1;
-    if (napeti_zmena) napeti_zmena-=1;
+  x=101;
+  y=255;
+  ((char*)&v)[1]=napeti/256;
+  ((char*)&v)[0]=napeti%256;
+  napeti_zmena^=1;
+  if (napeti_zmena) napeti_zmena-=1;
 #endif
-    cputs2("\\vdd=");
-    cput1000(v);
-    cputs2(" v");fillx(15);
+  cputs2("\\vdd=");
+  cput1000(v);
+  cputs2(" v");fillx(15);
 #ifdef ARM2SID
-    ((char*)&v)[1]=get_pcmd(CHAR_T+0x20,CHAR_I);
-    ((char*)&v)[0]=get_q();
+  ((char*)&v)[1]=get_pcmd(CHAR_T+0x20,CHAR_I);
+  ((char*)&v)[0]=get_q();
 #ifdef DEMO
   v=255;
 #endif
-    if (v!=0x4552) {
-      cputs2("Lt=");
-      if (v<0) {
+  if (v!=0x4552) {
+    cputs2("Lt=");
+    if (v<0) {
       cputc('-');
       v=0-v;
     }
-      cputbval(v/10);
+    cputbval(v/10);
     cputc('.');
     cputbval(v%10);
     cputc(CHAR_DEGREE);
     cputs2("cW     ");
   }
 #endif
-    gotoxy(0,mem);
+  gotoxy(0,mem);
 }
 
 //filter setting reading
 void nacti_extend(void) {
-    unsigned char p,q;
-    signed char v;
-    vyber_max=4;
+  unsigned char p,q;
+  signed char v;
+  vyber_max=4;
   p=get_pcmd(CHAR_H,CHAR_I);
-    q=get_q();
-    v=p;
-    v=v>>4;
-    vyber_value[0]=v;
-    v=p<<4;
-    v=v>>4;
-    vyber_value[1]=v;
-    v=q;
-    v=v>>4;
-    vyber_value[2]=v;
-    v=q<<4;
-    v=v>>4;
-    vyber_value[3]=v;
+  q=get_q();
+  v=p;
+  v=v>>4;
+  vyber_value[0]=v;
+  v=p<<4;
+  v=v>>4;
+  vyber_value[1]=v;
+  v=q;
+  v=v>>4;
+  vyber_value[2]=v;
+  v=q<<4;
+  v=v>>4;
+  vyber_value[3]=v;
 }
 
 //extended page (filter setting) automaton
 char extended(void) {
-    unsigned char key;
-    uvod_extend();
-    while (1) {
-      if (keypressed()) {
+  unsigned char key;
+  uvod_extend();
+  while (1) {
+    if (keypressed()) {
       key=cgetc();
       if ((key=='q')||(key=='b')) return key;
       if ((key=='s')||(key=='p')) {
@@ -1148,7 +1158,106 @@ char extended(void) {
       }
       vyber_zmena(extend_lists,key,1);
     }
+  }
+}
+
+void vyber_extra(unsigned char key) {
+  gotoxy(32,7+vyber*2);
+  if (vyber_value[vyber]&1) cputs2("yes");
+  else cputs2("no ");
+  switch (key) {
+    case 17:
+      //down
+      //break;
+    case 17+128:
+      //up
+#ifdef ARM2SID
+      if (version==3) {
+        vyber^=1;
+      }
+#endif
+      break;
+    case 29:
+      //right
+      //break;
+    case 29+128:
+      //left
+      vyber_value[vyber]^=3;
+      break;
+    default: break;
+  }
+  gotoxy(31,7+vyber*2);
+  if (vyber_value[vyber]&2) cputs2("L*W");
+  else cputs2(" ");
+  revers(1);
+  if (vyber_value[vyber]&1) cputs2("yesR");
+  else cputs2("noR ");
+}
+
+//print extra setting page
+void uvod_extra(void) {
+  uvod();
+  gotoxy(6,3);
+  cputs2("extra features settings menu");
+  vyber=1;
+#ifdef ARM2SID
+  if (version==3) {
+    gotoxy(6,7);
+    cputs2("auto mono to stereo off:  ");
+    if (vyber_value[0]&1) cputs2("yes");
+    else cputs2("no");
+    vyber=0;
+  }
+#endif
+  gotoxy(6,9);
+  cputs2("original adsr bug fixed:  ");
+  if (vyber_value[1]&1) cputs2("yes");
+  else cputs2("no");
+  save_back_quit();
+  vyber_extra(0);
+}
+
+//extra setting reading
+void nacti_extra(void) {
+  unsigned char p,q;
+#ifdef ARM2SID
+  if (version==3) {
+    p=get_pcmd(CHAR_M,CHAR_M);
+    q=get_q();
+    vyber_value[0]=0;
+    if ((p!=CHAR_E)&&(q&0x40)) vyber_value[0]=1;
+  }
+#endif
+  p=get_pcmd(CHAR_O,CHAR_I);
+  q=get_q();
+  vyber_value[1]=0;
+  if ((p==CHAR_O)&&(q==CHAR_F)) vyber_value[1]=1;
+}
+
+//extra page (non C64) automaton
+char extra(void) {
+  unsigned char key;
+  uvod_extra();
+  while (1) {
+    if (keypressed()) {
+      key=cgetc();
+      if ((key=='q')||(key=='b')) return key;
+      if ((key=='s')||(key=='p')) {
+        unsigned char i=CHAR_O;
+        if (vyber_value[1]&1) i+=32;
+        send_cmd_wait(i,CHAR_E);
+#ifdef ARM2SID
+        if (version==3) {
+          i=CHAR_M;if (vyber_value[0]&1) i+=32;
+          send_cmd_wait(i,CHAR_E);
+        }
+#endif
+        save(key);
+        return 0;
+      }
+      vyber_extra(key);
     }
+  }
 }
 
 #ifdef DIGIFIX
@@ -1197,7 +1306,7 @@ static SIDaddrtype ping_sid;
 
 void digifix_analog(void) {
 #ifdef DEMO
-	static short zz;
+    static short zz;
 #endif
     short v,vv;
     short vref;
@@ -1205,63 +1314,63 @@ void digifix_analog(void) {
     ((char*)&vref)[1]=get_pcmd(CHAR_R+0x20,CHAR_I);
     ((char*)&vref)[0]=get_q();
 #ifdef ARM2SID
-	if (isARM2) {
+    if (isARM2) {
 #ifdef DEMO
-		vref=3300;
+        vref=3300;
 #endif
-	    if (vref!=0x4552) {
-	    	cputs2("Lref=");
-		    cput1000(vref);
-		    cputs2(" vW");
-		} else vref=3300;
-	    fillx(16);
-	}
+        if (vref!=0x4552) {
+            cputs2("Lref=");
+            cput1000(vref);
+            cputs2(" vW");
+        } else vref=3300;
+        fillx(16);
+    }
 #endif
     ((char*)&v)[1]=get_pcmd(CHAR_E+0x20,CHAR_I);
     ((char*)&v)[0]=get_q();
 #ifdef DEMO
-	vref=1623*2;
-	v=zz;
+    vref=1623*2;
+    v=zz;
         zz=1623;
 #endif
     if (v!=0x4552) {
-			vv=vref/2-v;
-    	cputs2("\\  vin=");
-    	if (v<0) {
-			cputc('-');
-			v=0-v;
-		}
-	    cput1000(v);
-	    cputs2(" v    \\  iin=");
-	    v+=v;
-	    v=v-vref;
-	    v*=5;
-	    v/=4;	// *0.8
-	    v=v+v/128;
-    	if (v<0) {
-			cputc('-');
-			v=0-v;
-		} else cputc('+');
-		cputbval(v/100);
-		v%=100;
-		cputc('.');
-	    cputbval(v/10);
-	    cputbval(v%10);
-		cputs2(" ua");
-	    fillx(16);
-		gotoxy(32,14+6);
-		vv*=12;
-		vv/=41;
-		if (vv>100) vv=100;
-		if (vv<-100) vv=-100;
-   	if (vv<0) {
-		cputc('-');
-		vv=0-vv;
-		}
-		cputbval(vv);
-		cputc('%');
+            vv=vref/2-v;
+        cputs2("\\  vin=");
+        if (v<0) {
+            cputc('-');
+            v=0-v;
+        }
+        cput1000(v);
+        cputs2(" v    \\  iin=");
+        v+=v;
+        v=v-vref;
+        v*=5;
+        v/=4;    // *0.8
+        v=v+v/128;
+        if (v<0) {
+            cputc('-');
+            v=0-v;
+        } else cputc('+');
+        cputbval(v/100);
+        v%=100;
+        cputc('.');
+        cputbval(v/10);
+        cputbval(v%10);
+        cputs2(" ua");
+        fillx(16);
+        gotoxy(32,14+6);
+        vv*=12;
+        vv/=41;
+        if (vv>100) vv=100;
+        if (vv<-100) vv=-100;
+       if (vv<0) {
+        cputc('-');
+        vv=0-vv;
+        }
+        cputbval(vv);
+        cputc('%');
     fillx(39);
-	}
+    }
 }
 
 void nacti_digifix(void) {
@@ -1269,42 +1378,42 @@ void nacti_digifix(void) {
     signed char s;
     vyber_max=2;
 
-	// audio in
-	p=get_pcmd(0x64,CHAR_I);
-   	q=get_q();
-   	audio_value[0]=0;
+    // audio in
+    p=get_pcmd(0x64,CHAR_I);
+       q=get_q();
+       audio_value[0]=0;
     if ((p==0x64)&&(q==DIGIFIX_YES)) audio_value[0]=1;
     audio_mem[0]=audio_value[0];
 
-	p=get_pcmd('8',CHAR_I);
-   	s=get_q()-128;
-   	audio_value[2]=4;
-   	s=s/8;
+    p=get_pcmd('8',CHAR_I);
+       s=get_q()-128;
+       audio_value[2]=4;
+       s=s/8;
     if ((p=='d')&&(s>=-4)&&(s<=4)) audio_value[1]=s;
     audio_mem[1]=audio_value[1];
 
-	// SID type
-	p=get_pcmd('g',CHAR_I);
-   	s=get_q();
+    // SID type
+    p=get_pcmd('g',CHAR_I);
+       s=get_q();
     if ((s=='5')&&(p>='6')&&(p<='8')) audio_mem[2]=p;
     else audio_mem[2]=0;
 }
 
 void lineupdate_digifix(void) {
-	if (audio_value[0]) {
-		textcolorW();
-	} else {
-		textcolorLB();
-	}
+    if (audio_value[0]) {
+        textcolorW();
+    } else {
+        textcolorLB();
+    }
     cputs2xy(3,14+1,  "mos 8580 software digifix strength");
     cputs2xy(1,14+3,"-100 -75 -50 -25  0%  25  50  75  100");
-	if (audio_value[0]) {
-		textcolorLB();
-	} else {
-		textcolorW();
-	}
-		cputs2xy(2,14+6,"digifix by ext. hardware pin: ");
-	textcolorW();
+    if (audio_value[0]) {
+        textcolorLB();
+    } else {
+        textcolorW();
+    }
+        cputs2xy(2,14+6,"digifix by ext. hardware pin: ");
+    textcolorW();
 }
 
 void uvod_digifix(void) {
@@ -1312,14 +1421,14 @@ void uvod_digifix(void) {
     cputs2xy(8,  3,       "digifix mos8580 settings");
     cputs2xy(9,9+1,        "digifix controlled by");
     cputs2xy(1,9+3," hardware                    software");
-		lineupdate_digifix();
+        lineupdate_digifix();
 
-	save_back_quit();
+    save_back_quit();
 
     vyber=0;
-	vyber_zmena(audio_lists,17,0);
+    vyber_zmena(audio_lists,17,0);
 
-	vyber_zmena(audio_lists,17,1);
+    vyber_zmena(audio_lists,17,1);
 }
 
 //extended page (filter setting) automaton
@@ -1332,48 +1441,48 @@ unsigned char digifix(void) {
     SIDwr(23,0);
     while (1) {
 
-			vyber_max=audio_value[0]+1;
+            vyber_max=audio_value[0]+1;
 
-    	if (keypressed()) {
-			key=cgetc();
-			SIDwr(24,0);
-			if ((key=='q')||(key=='b')) {
-				send_cmd_wait((audio_mem[0])?0x64:0x44,CHAR_A);
-				send_cmd_wait((audio_mem[1]&0x0F)|0xB0,CHAR_A);
+        if (keypressed()) {
+            key=cgetc();
+            SIDwr(24,0);
+            if ((key=='q')||(key=='b')) {
+                send_cmd_wait((audio_mem[0])?0x64:0x44,CHAR_A);
+                send_cmd_wait((audio_mem[1]&0x0F)|0xB0,CHAR_A);
 
-				return key;
-			}
-			if ((key=='s')||(key=='p')) {
-				send_cmd_wait((audio_value[0])?0x64:0x44,CHAR_A);
-				send_cmd_wait((audio_value[1]&0x0F)|0xB0,CHAR_A);
+                return key;
+            }
+            if ((key=='s')||(key=='p')) {
+                send_cmd_wait((audio_value[0])?0x64:0x44,CHAR_A);
+                send_cmd_wait((audio_value[1]&0x0F)|0xB0,CHAR_A);
 
-				save(key);
-				return 0;
-			}
+                save(key);
+                return 0;
+            }
 
-			res=vyber_zmena(audio_lists,key,1);
-			switch (res) {
-				case 0:
-					send_cmd_wait((audio_value[0])?0x64:0x44,CHAR_A);
-					lineupdate_digifix();
-				    break;
-				case 1:
-					send_cmd_wait(0x64,'a');
-					send_cmd_wait((audio_value[1]&0x0F)|0xB0,CHAR_A);
-
-
+            res=vyber_zmena(audio_lists,key,1);
+            switch (res) {
+                case 0:
+                    send_cmd_wait((audio_value[0])?0x64:0x44,CHAR_A);
+                    lineupdate_digifix();
+                    break;
+                case 1:
+                    send_cmd_wait(0x64,'a');
+                    send_cmd_wait((audio_value[1]&0x0F)|0xB0,CHAR_A);
 
 
 
-					ping('8');
-				    break;
-				default:
-				    break;
-			}
-		} else {
-			digifix_analog();
-			delay(150);
-		}
+
+
+                    ping('8');
+                    break;
+                default:
+                    break;
+            }
+        } else {
+            digifix_analog();
+            delay(150);
+        }
     }
 }
 #endif
@@ -1436,21 +1545,34 @@ int main(main_params)
       }
 #endif
         if (version>=2) {
-        if (a=='p') {
-          save('p');
-          break;
-        }
-        if (a=='e') {
-          nacti_extend();
-          a=extended();
-          if (a=='q') {
-            clrscr();
-            gotoxy(1,1);
+          if (a=='p') {
+            save('p');
             break;
           }
-          a=0;
-          break;
-        }
+          if (a=='e') {
+            nacti_extend();
+            a=extended();
+            if (a=='q') {
+              clrscr();
+              gotoxy(1,1);
+              break;
+            }
+            a=0;
+            break;
+          }
+          if (revision>=13) {
+            if (a=='x') {
+              nacti_extra();
+              a=extra();
+              if (a=='q') {
+                clrscr();
+                gotoxy(1,1);
+                break;
+              }
+              a=0;
+              break;
+            }
+          }
         }
     }
     delay(150);
