@@ -3,9 +3,24 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <fcntl.h>
-#include <windows.h>
 #include <time.h> // clock_t, clock, CLOCKS_PER_SEC
-#include <conio.h>
+
+#ifdef _WIN32
+  #include <windows.h>
+  #include <conio.h>
+#else
+  // to build on unix/macOS/linux:
+  // gcc -Wall -o sidplay main.c
+  #include <sys/types.h>
+  #include <sys/uio.h>
+  #include <unistd.h>
+  #include <stdlib.h>
+  #include <termios.h>
+  #include <sys/time.h>
+  typedef int HANDLE;
+  typedef long int DWORD;
+  #define CloseHandle(h) close(h)
+#endif
 
 void delay(unsigned int milliseconds){
 
@@ -20,12 +35,16 @@ static int stereo=0;
 static int state_on=1;
 
 void serout(unsigned char *data, int len) {
-    DWORD bytes_written;
+    DWORD bytes_read;
     //printf("serout\n");
     do {
         char x;
-        ReadFile(hSerial, &x, 1, &bytes_written, NULL);
-        if (bytes_written>0) {
+#ifdef _WIN32
+        ReadFile(hSerial, &x, 1, &bytes_read, NULL);
+#else
+        bytes_read = read(hSerial, &x, 1);
+#endif
+        if (bytes_read>0) {
             if (x==0x11) {
                     state_on=1;
                     printf("o");
@@ -36,13 +55,33 @@ void serout(unsigned char *data, int len) {
             }
         }
     }
-    while (bytes_written>0 || state_on==0);
+    while (bytes_read>0 || state_on==0);
+#ifdef _WIN32
     if(!WriteFile(hSerial, data, len, &bytes_written, NULL))
+#else
+    if(write(hSerial, data, len) != len)
+#endif
     {
         fprintf(stderr, "Error\n");
         CloseHandle(hSerial);
         exit(1);
     }
+#ifndef _WIN32
+    // nobomi said wait at least 100 us for every sent byte:
+    // [1]: https://github.com/nobomi/Arduino-ARMSID-configurator/pull/2#issuecomment-907066481
+    // I think that includes the tcdrain() time, so measure and subtract that.
+    // Even so, nanosleep(100000) slows the timing too much. 10,000ns (10us) seems to work nicely.
+    struct timespec drainStart, drainFinish;
+    clock_gettime(CLOCK_MONOTONIC, &drainStart);
+    tcdrain(hSerial); // wait for written data to finish transmitting
+    clock_gettime(CLOCK_MONOTONIC, &drainFinish);
+    // ignore the seconds should be fine as long as draining takes less than a second.
+    uint64_t drainNano = (uint64_t)drainFinish.tv_nsec - (uint64_t)drainStart.tv_nsec;
+    if (drainNano < len*100000) {
+      // sleep for 100us (100000ns) per byte, minus the time tcdrain() took.
+      nanosleep((const struct timespec[]){{0, (len*10000 - drainNano)}}, NULL);
+    }
+#endif
 }
 
 int __ssat(int a,int b) {
@@ -181,6 +220,7 @@ void setPC(uint16_t next_pc, m6502_t *cpu, uint64_t *pins, uint8_t *mem) {
 }
 
 int open_seriak(char *name) {
+#ifdef _WIN32
     char namefull[100];
     DCB dcbSerialParams = {0};
     COMMTIMEOUTS timeouts = {0};
@@ -233,6 +273,40 @@ int open_seriak(char *name) {
         return 1;
     }
     return 0;
+#else
+    struct termios term;
+
+    fprintf(stderr, "Opening serial port...");
+    hSerial = open(name, O_RDWR | O_NOCTTY);
+    if (hSerial == -1)
+    {
+            fprintf(stderr, "Error\n");
+            return 1;
+    }
+    else fprintf(stderr, "OK\n");
+
+    if (tcgetattr(hSerial, &term) != 0)
+    {
+        fprintf(stderr, "Error getting device state\n");
+        CloseHandle(hSerial);
+        return 1;
+    }
+
+    cfmakeraw(&term);
+    cfsetspeed(&term, B115200);
+    term.c_cc[VMIN] = 0; // non-blocking read()
+    term.c_cc[VTIME] = 0; // should be zero by default, but just to be safe.
+    // timing of writes is handled by tcdrain() after write()
+
+    if(tcsetattr(hSerial, TCSANOW, &term) != 0)
+    {
+        fprintf(stderr, "Error setting device parameters\n");
+        CloseHandle(hSerial);
+        return 1;
+    }
+
+    return 0;
+#endif
 }
 
 int main(int argc, char **argv) {
@@ -240,8 +314,10 @@ int main(int argc, char **argv) {
     // 64 KB zero-initialized memory
     uint8_t mem[(1<<16)] = { };
 
+#ifdef _WIN32
     _setmode( _fileno( stdin ), _O_BINARY );
     _setmode( _fileno( stdout ), _O_BINARY );
+#endif
 
     if (argc<3) {
             printf("usage: %s COMx sound_file.sid\r\n",argv[0]);
@@ -308,9 +384,11 @@ int main(int argc, char **argv) {
             instr--;
           } while (instr%(985250/50));
 
+#ifdef _WIN32
         if (kbhit()) {
             break;
         }
+#endif
 
       }
             serout(brst,13);
