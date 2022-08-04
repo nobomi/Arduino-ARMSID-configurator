@@ -31,9 +31,9 @@
 /*****************************************************************************/
 
 #ifdef ARM2SID
-#define Nadpis "\\\\       nobomi armsid tester v3.13\\\\\\"
+#define Nadpis "\\\\       nobomi armsid tester v3.14\\\\\\"
 #else
-#define Nadpis "\\\\       nobomi armsid tester v2.13\\\\\\"
+#define Nadpis "\\\\       nobomi armsid tester v2.14\\\\\\"
 #endif
 #define Notfou "armsid not found"
 #ifdef ARM2SID
@@ -841,6 +841,10 @@ void najdi2(void) {
 signed char najdi(void) {
   int res=(1<<SIDaddresses)-1;  // all in
 #ifdef DEMO
+  res=5;
+#ifdef ARM2SID
+  res=3;
+#endif
 #else
   int i,j;
   unsigned char p,q;
@@ -897,9 +901,7 @@ signed char najdi(void) {
   else { // just one
     SIDaddr=SIDgetaddr(SIDi);
   }
-  if (res>0) {
-    printf_sidi();
-  } else {
+  if (res==0) {
     cputs2(Notfou);
     cputs2("\\");
   }
@@ -920,7 +922,10 @@ void details(void) {
   q=get_q();
 #ifdef DEMO
   p=2;
-  q=13;
+  q=14;
+#ifdef ARM2SID
+  p=3;
+#endif
 #endif
   version=p;
   revision=q;
@@ -930,7 +935,7 @@ void details(void) {
   cputbval(q);
   p=get_pcmd(CHAR_R,CHAR_I);
 #ifdef DEMO
-  p='8';
+  p='0';
 #endif
   if ((p>'0')&&(p<CHAR_E)) {
     release=p-'0';
@@ -1161,22 +1166,34 @@ char extended(void) {
   }
 }
 
+#ifdef ARM2SID
+char is_extra() {
+    if ((version==3)&&(revision>=14)) return 1;
+	return 0;
+}
+#endif
+
 void vyber_extra(unsigned char key) {
   gotoxy(32,7+vyber*2);
   if (vyber_value[vyber]&1) cputs2("yes");
   else cputs2("no ");
   switch (key) {
+#ifdef ARM2SID
     case 17:
       //down
-      //break;
+      if (is_extra()!=0) {
+        if (vyber==2) vyber=0;
+        else ++vyber;
+      }
+      break;
     case 17+128:
       //up
-#ifdef ARM2SID
-      if (version==3) {
-        vyber^=1;
+      if (is_extra()!=0) {
+        if (vyber==0) vyber=2;
+        else --vyber;
       }
-#endif
       break;
+#endif
     case 29:
       //right
       //break;
@@ -1201,12 +1218,16 @@ void uvod_extra(void) {
   cputs2("extra features settings menu");
   vyber=1;
 #ifdef ARM2SID
-  if (version==3) {
-    gotoxy(6,7);
-    cputs2("auto mono to stereo off:  ");
-    if (vyber_value[0]&1) cputs2("yes");
-    else cputs2("no");
-    vyber=0;
+  if (is_extra()!=0) {
+	gotoxy(6,7);
+	cputs2("auto mono to stereo off:  ");
+	if (vyber_value[0]&1) cputs2("yes");
+	else cputs2("no");
+	gotoxy(6,11);
+	cputs2("duplicate left to right:  ");
+	if (vyber_value[2]&1) cputs2("yes");
+	else cputs2("no");
+	vyber=0;
   }
 #endif
   gotoxy(6,9);
@@ -1221,11 +1242,13 @@ void uvod_extra(void) {
 void nacti_extra(void) {
   unsigned char p,q;
 #ifdef ARM2SID
-  if (version==3) {
-    p=get_pcmd(CHAR_M,CHAR_M);
+  if (is_extra()!=0) {
+	p=get_pcmd(CHAR_M,CHAR_M);
     q=get_q();
     vyber_value[0]=0;
+    vyber_value[2]=0;
     if ((p!=CHAR_E)&&(q&0x40)) vyber_value[0]=1;
+    if ((p!=CHAR_E)&&(q&0x20)) vyber_value[2]=1;
   }
 #endif
   p=get_pcmd(CHAR_O,CHAR_I);
@@ -1247,8 +1270,10 @@ char extra(void) {
         if (vyber_value[1]&1) i+=32;
         send_cmd_wait(i,CHAR_E);
 #ifdef ARM2SID
-        if (version==3) {
+		if (is_extra()!=0) {
           i=CHAR_M;if (vyber_value[0]&1) i+=32;
+          send_cmd_wait(i,CHAR_E);
+          i=CHAR_N;if (vyber_value[2]&1) i+=32;
           send_cmd_wait(i,CHAR_E);
         }
 #endif
