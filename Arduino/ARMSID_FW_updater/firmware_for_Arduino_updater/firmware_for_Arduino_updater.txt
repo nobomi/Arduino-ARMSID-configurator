@@ -1,0 +1,5 @@
+The latest ARMSID and ARM2SID firmware suitable for Arduino Updater can be found in this folder.
+
+To update firmware in your ARMSID/ARM2SID build ArduinoUpdater.ino to your Arduino. Then unzip the firmware and use "ARMSIDupArduino.exe COMx firmwarename.bin" on command line to udpate your ARMSID/ARM2SID.
+
+Although the firmware has a .bin extension it is not binary code for STM32. The firmware is encrypted and requires an ARMSID bootloader for decryption and installation. The firmware in this folder is exclusively for the ARMSID Arduino Updater. If you upload it directly to the STM32 using STM tools, you will brick your ARMSID/ARM2SID and it will require service by manufacturer.
