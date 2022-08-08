@@ -83,5 +83,5 @@ Arduino        | B1                | Arduino UNO Rev3                           
   * 3.5 mm audio JACK touches the Arduino USB connector. Solder without tin bump and isolate with Kapton tape!
   * No power supply for real SIDs. The 5V provided is not sufficient for MOS 6581 nor 8580.  
 
-### Guide
+## Guide
 DARRELL A. WESTBURY created nice guide for configuring and updating ARMSID/ARM2SID using Arduino shield [GET IT HERE](https://docs.google.com/document/d/1B_xzXlLjq3NbKnOrhIoJ5PrlVIhlsD_aASEhB0CWK90/edit?usp=sharing). He also shared his experience with setup and using ARM2SID in MB6582. Thank you!
