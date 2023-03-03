@@ -31,9 +31,9 @@
 /*****************************************************************************/
 
 #ifdef ARM2SID
-#define Nadpis "\\\\       nobomi armsid tester v3.14\\\\\\"
+#define Nadpis "\\\\       nobomi armsid tester v3.15\\\\\\"
 #else
-#define Nadpis "\\\\       nobomi armsid tester v2.14\\\\\\"
+#define Nadpis "\\\\       nobomi armsid tester v2.15\\\\\\"
 #endif
 #define Notfou "armsid not found"
 #ifdef ARM2SID
@@ -791,30 +791,36 @@ void printf_found(char n, char sid) {
 #endif //ARM2SID
 
 signed char vyber_sid(char i) {
-    signed char res=0;
-    char id[3];
-    char n=0;
-    char a;
-    cputs2("more than one armsid found !\\\\");
-    if (i&1) {
-  id[n++]=1;
-  printf_found(n,0);
+  signed char res=0;
+  char id[3];
+  char n=0;
+  char a;
+  int x;
+  char s[4];
+  cputs2("more than one armsid found !\\\\");
+  for (x=0;x<SIDaddresses;x++) {
+    if (i&(1<<x)) {
+      id[n++]=x+1;
+      printf_found(n,x);
     }
-    if (i&2) {
-  id[n++]=2;
-  printf_found(n,1);
-    }
-    if (i&4) {
-  id[n++]=3;
-  printf_found(n,2);
-    }
-    cputs2("\\press ");
-    if (n==3) {
-    cputs2("@1,@2 or @3");
-    } else {
-    cputs2("@1 or @2");
-    }
-    cputs2(" to choose one\\or press @q to quit\\");
+  }
+  cputs2("\\press ");
+  s[0]='@';
+  s[2]=',';
+  s[3]=0;
+  for (x=0;x<n-2;x++) {
+    s[1]='1'+x;
+  	cputs2(s);
+  }
+  s[2]=0;
+  if (x<n-1) {
+	s[1]='1'+x++;
+  	cputs2(s);
+  }
+  cputs2(" or ");
+  s[1]='1'+x;
+  cputs2(s);
+  cputs2(" to choose one\\or press @q to quit\\");
   while (1) {
       if (keypressed()) {
     a=cgetc();
@@ -822,14 +828,14 @@ signed char vyber_sid(char i) {
     if ((a>='0')&&(a<='9')) {
         a=a-'1';
         if (a<n) {
-      res=id[a];
-      SIDaddr=(SIDaddrtype)(SIDgetaddr(res-1));SIDi=res-1;
+          res=id[a];
+          SIDaddr=(SIDaddrtype)(SIDgetaddr(res-1));SIDi=res-1;
+          break;
         }
-        break;
-    }
       }
+    }
   }
-    return res;
+  return res;
 }
 
 void najdi2(void) {
@@ -922,7 +928,7 @@ void details(void) {
   q=get_q();
 #ifdef DEMO
   p=2;
-  q=14;
+  q=15;
 #ifdef ARM2SID
   p=3;
 #endif
