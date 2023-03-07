@@ -370,7 +370,7 @@ void fcputs2xy(const unsigned char x, const unsigned char y, const __FlashString
 }
 
 #define cputs2(a) fcputs2(F(a))
-//#define cputs2(a) cputs2my(a)
+#define cputs2_var(a) cputs2my(a)
 #define cputs2xy(a,b,c) fcputs2xy(a,b,F(c))
 
 // ------------------------------ KEYBOARD -------------------------------------
