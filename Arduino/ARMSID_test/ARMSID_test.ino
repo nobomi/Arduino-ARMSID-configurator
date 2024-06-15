@@ -811,16 +811,16 @@ signed char vyber_sid(char i) {
   s[3]=0;
   for (x=0;x<n-2;x++) {
     s[1]='1'+x;
-  	cputs2(s);
+  	cputs2_var(s);
   }
   s[2]=0;
   if (x<n-1) {
 	s[1]='1'+x++;
-  	cputs2(s);
+  	cputs2_var(s);
   }
   cputs2(" or ");
   s[1]='1'+x;
-  cputs2(s);
+  cputs2_var(s);
   cputs2(" to choose one\\or press @q to quit\\");
   while (1) {
       if (keypressed()) {
